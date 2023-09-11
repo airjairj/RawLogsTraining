@@ -29,3 +29,5 @@ predictions = torch.argmax(logits, dim=1)
 
 # Stampa le previsioni
 print("Classe predetta:", predictions.item())
+
+#aggiungere il log per intero
