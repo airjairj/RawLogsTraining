@@ -83,7 +83,7 @@ pipe = pipeline("text-classification", model=model, tokenizer=tokenizer)
 #endregion
 
 # Imposta gli argomenti per il training
-training_args = TrainingArguments(evaluation_strategy="epoch")
+training_args = TrainingArguments(output_dir=" C:\\Users\\GAMING EDGE\\Desktop\\LAUREA\\Modelli\\ModelloLog",evaluation_strategy="epoch")
 # Carica la metrica di valutazione
 metric = evaluate.load("accuracy")
 
