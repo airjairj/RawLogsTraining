@@ -13,7 +13,7 @@ text_to_classify = input("Inserisci il log che vuoi classificare: \n")
 encoded_input = tokenizer(text_to_classify, padding="max_length", truncation=True, return_tensors="pt")
 
 # Prende il modello che ho addestrato dalla directory
-model = AutoModelForSequenceClassification.from_pretrained("C:\\Users\\GAMING EDGE\\Desktop\\LAUREA\\Modelli\\ModelloLog")
+model = AutoModelForSequenceClassification.from_pretrained("C:\\Users\\GAMING EDGE\\Desktop\\LAUREA\\Modelli\\ModelloLog3")
 
 # Assicurarsi che il modello sia in modalità valutazione (è già il caso se hai completato l'addestramento)
 model.eval()
@@ -31,7 +31,8 @@ predictions = torch.argmax(logits, dim=1)
 # Stampa le previsioni
 print("Classe predetta:", predictions.item())
 
-#aggiungere il log per intero
+# Qua si puo anche usare||  C:\\Users\\GAMING EDGE\\Desktop\\LAUREA\\Datasets\\V4\\dataset-involved_services-raw_logs-10000-with_labels.json
+# Oppure||  C:\\Users\\GAMING EDGE\\Desktop\\LAUREA\\Datasets\\V4\\dataset-involved_services-raw_logsLABEL.json 
 dataset = load_dataset("json", data_files={"train": "C:\\Users\\GAMING EDGE\\Desktop\\LAUREA\\Datasets\\V4\\dataset-involved_services-raw_logs-10000-with_labels.json"})
 
 labels = []
