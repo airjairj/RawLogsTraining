@@ -32,7 +32,7 @@ predictions = torch.argmax(logits, dim=1)
 print("Classe predetta:", predictions.item())
 
 # Qua si puo anche usare||  C:\\Users\\GAMING EDGE\\Desktop\\LAUREA\\Datasets\\V4\\dataset-involved_services-raw_logs-10000-with_labels.json
-# Oppure||  C:\\Users\\GAMING EDGE\\Desktop\\LAUREA\\Datasets\\V4\\dataset-involved_services-raw_logsLABEL.json 
+# Oppure||  C:\\Users\\GAMING EDGE\\Desktop\\LAUREA\\Datasets\\V4\\dataset-involved_services-raw_logsLABEL.json
 dataset = load_dataset("json", data_files={"train": "C:\\Users\\GAMING EDGE\\Desktop\\LAUREA\\Datasets\\V4\\dataset-involved_services-raw_logs-10000-with_labels.json"})
 
 labels = []
