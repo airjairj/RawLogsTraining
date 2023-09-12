@@ -36,9 +36,6 @@ dataset = load_dataset("json", data_files={"train": "C:\\Users\\GAMING EDGE\\Des
 
 labels = []
 
-def is_string_in_array(string, string_array):
-    return string in string_array
-
 def trova_labels_unici(dataset):
     labels = []
     for val in dataset:
@@ -53,25 +50,8 @@ def trova_labels_unici(dataset):
 
 temp_list = trova_labels_unici(dataset)
 
-# dictionary that maps integer to its string value 
-label_dict = {}
+def trovaNumLabel():
+    val = predictions.item()
+    return temp_list[val]
 
-# list to store integer labels 
-int_labels = []
-
-for i in range(len(temp_list)):
-    label_dict[i] = temp_list[i]
-    int_labels.append(i)
-
-def cambio_str2int(a):
-    val = a["label"]
-    for k in int_labels:
-        if(val == temp_list[k]):
-            #Trovato uguale, il suo numero è k
-            #print("PRIMA#",k ,": ", a["label"])
-            a["label"] = k
-            #print("DOPO#",k ,": ", a["label"])
-
-    return a
-            
-print(dataset["train"][predictions.item()]["label"])
+print(predictions.item(), ": ", trovaNumLabel())
