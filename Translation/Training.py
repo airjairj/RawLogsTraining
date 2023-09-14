@@ -12,6 +12,41 @@ notebook_login()
 ##books = load_dataset("opus_books", "en-fr")
 dataset = load_dataset("json", data_files={"train": "/content/drive/MyDrive/Colab Notebooks/dataset-involved_services-raw_logs-10000-with_labels.json"})
 
+#region conteggio labels (446?)
+def trova_labels_unici(dataset):
+    labels = []
+    for val in dataset:
+
+        # Estrai la stringa dal JSON
+        data_string = dataset[val]["label"]
+
+        # Rimuovi le stringhe duplicate mantenendo l'ordine dell'apparizione
+        labels = list(dict.fromkeys(data_string))
+
+    return labels
+
+temp_list = trova_labels_unici(dataset)
+int_labels = []
+
+for i in range(len(temp_list)):
+    int_labels.append(i)
+
+print("Ci sono: ",len(int_labels), " labels")
+
+def cambio_str2int(a):
+    val = a["label"]
+    for k in int_labels:
+        if(val == temp_list[k]):
+            #Trovato uguale, il suo numero è k
+            a["label"] = k
+
+    return a
+
+# Cambio i label con interi
+##dataset = dataset.map(cambio_str2int)
+print(dataset["train"][9999]["label"]) ##dovrebbe essere 69
+#endregion
+
 #
 dataset = dataset["train"].train_test_split(test_size=0.1)
 #
@@ -26,13 +61,13 @@ prefix = "translate raw_logs to label:"
 
 
 def preprocess_function(examples):
-
     inputs = [prefix + example for example in examples[source_lang]]
     targets = [example for example in examples[target_lang]]
     model_inputs = tokenizer(inputs, text_target=targets, max_length=128, truncation=True)
     return model_inputs
 #
 tokenized_dataset = dataset.map(preprocess_function, batched=True)
+tokenized_dataset = tokenized_dataset.remove_columns("label")
 #
 print(dataset["train"][0])
 print(tokenized_dataset["train"][0])
