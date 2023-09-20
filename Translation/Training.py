@@ -6,55 +6,43 @@ from transformers import DataCollatorForSeq2Seq
 from transformers import AutoTokenizer
 import evaluate
 import numpy as np
+import Levenshtein
+
 
 notebook_login()
-#
-##books = load_dataset("opus_books", "en-fr")
+
 dataset = load_dataset("json", data_files={"train": "/content/drive/MyDrive/Colab Notebooks/dataset-involved_services-raw_logs-10000-with_labels.json"})
 
-#region conteggio labels (446?)
-def trova_labels_unici(dataset):
-    labels = []
-    for val in dataset:
+#region cambio lettere servizi
+mappa_sostituzione = {'webservice1': 'A', 'redisservice1': 'B', 'mobservice1': 'C', 'logservice1': 'D', 'dbservice1': 'E', 'redisservice2': 'F' , 'logservice2': 'G', 'mobservice2': 'H', 'dbservice2': 'I', 'webservice2': 'J'}
 
-        # Estrai la stringa dal JSON
-        data_string = dataset[val]["label"]
+def trova_servizi_unici(a):
+    risultato = ""
+    prossima_lettera = 'A'
+    # Estrai la stringa dal JSON
+    stringa = a["label"]
+    elementi = stringa.split('--')
 
-        # Rimuovi le stringhe duplicate mantenendo l'ordine dell'apparizione
-        labels = list(dict.fromkeys(data_string))
+    for elemento in elementi:
+        risultato += mappa_sostituzione[elemento] + '--'
 
-    return labels
-
-temp_list = trova_labels_unici(dataset)
-int_labels = []
-
-for i in range(len(temp_list)):
-    int_labels.append(i)
-
-print("Ci sono: ",len(int_labels), " labels")
-
-def cambio_str2int(a):
-    val = a["label"]
-    for k in int_labels:
-        if(val == temp_list[k]):
-            #Trovato uguale, il suo numero è k
-            a["label"] = k
+    # Rimuovi l'ultimo ' ' extra
+    risultato = risultato[:-2]
+    #print("PRIMA:",a["label"])
+    a["label"] = risultato
+    #print("DOPO:",a["label"])
 
     return a
-
-# Cambio i label con interi
-##dataset = dataset.map(cambio_str2int)
-print(dataset["train"][9999]["label"]) ##dovrebbe essere 69
 #endregion
 
-#
+
 dataset = dataset["train"].train_test_split(test_size=0.1)
 #
 # PREPROCESS
 #
 checkpoint = "t5-small"
 tokenizer = AutoTokenizer.from_pretrained(checkpoint)
-#
+
 source_lang = "raw_logs"
 target_lang = "label"
 prefix = "translate raw_logs to label:"
@@ -65,61 +53,46 @@ def preprocess_function(examples):
     targets = [example for example in examples[target_lang]]
     model_inputs = tokenizer(inputs, text_target=targets, max_length=128, truncation=True)
     return model_inputs
-#
-tokenized_dataset = dataset.map(preprocess_function, batched=True)
+
+tokenized_dataset = dataset.map(trova_servizi_unici)
+tokenized_dataset = tokenized_dataset.map(preprocess_function, batched=True)
+
 tokenized_dataset = tokenized_dataset.remove_columns("label")
-#
-print(dataset["train"][0])
-print(tokenized_dataset["train"][0])
+
+print(mappa_sostituzione)
 
 
 data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, model=checkpoint)
 #
 #EVALUATE
 #
-metric = evaluate.load("sacrebleu")
-#
-def postprocess_text(preds, labels):
 
-    preds = [pred.strip() for pred in preds]
-    labels = [[label.strip()] for label in labels]
-    return preds, labels
-
-
-def compute_metrics(eval_preds):
-
+def compute_edit_distance(eval_preds):
     preds, labels = eval_preds
-    if isinstance(preds, tuple):
-        preds = preds[0]
-    decoded_preds = tokenizer.batch_decode(preds, skip_special_tokens=True)
 
-    labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
+    # Calculate the edit distance for each pair of predictions and labels
+    edit_distances = [Levenshtein.distance(pred, label) for pred, label in zip(preds, labels)]
 
-    decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
+    # Calculate the average edit distance
+    avg_edit_distance = sum(edit_distances) / len(edit_distances)
 
-    decoded_preds, decoded_labels = postprocess_text(decoded_preds, decoded_labels)
-
-    result = metric.compute(predictions=decoded_preds, references=decoded_labels)
-    result = {"bleu": result["score"]}
-
-    prediction_lens = [np.count_nonzero(pred != tokenizer.pad_token_id) for pred in preds]
-    result["gen_len"] = np.mean(prediction_lens)
-    result = {k: round(v, 4) for k, v in result.items()}
+    # Return the average edit distance as the evaluation metric
+    result = {"edit_distance": avg_edit_distance}
     return result
 #
 #TRAINING
 #
 model = AutoModelForSeq2SeqLM.from_pretrained(checkpoint)
-#
+
 training_args = Seq2SeqTrainingArguments(
-    output_dir="MODELLO",
+    output_dir="SOSTITUIRE CON PATH DI DESTINAZIONE PER IL MODELLO",
     evaluation_strategy="epoch",
     learning_rate=2e-5,
-    per_device_train_batch_size=16,
-    per_device_eval_batch_size=16,
+    per_device_train_batch_size=18,
+    per_device_eval_batch_size=18,
     weight_decay=0.01,
     save_total_limit=3,
-    num_train_epochs=2,
+    num_train_epochs=18,
     predict_with_generate=True,
     fp16=True,
     push_to_hub=True,
@@ -132,10 +105,9 @@ trainer = Seq2SeqTrainer(
     eval_dataset=tokenized_dataset["test"],
     tokenizer=tokenizer,
     data_collator=data_collator,
-    compute_metrics=compute_metrics,
+    compute_metrics=compute_edit_distance,
 )
 input("Premi invio per addestrare")
 trainer.train()
-#
+
 trainer.push_to_hub()
-#
