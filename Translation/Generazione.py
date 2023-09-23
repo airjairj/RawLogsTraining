@@ -88,13 +88,16 @@ def trova_stringa_simile(input_string, d_set):
             min_distance = distance
             stringa_simile = candidata["raw_logs"]
 
+    print("CANDI:", candidata["label"])
+    print("INPUT:", input_string)
+    print("MIN DIST:", min_distance)
     return stringa_simile
 
 # Esempio di utilizzo
-stringa_simile = trova_stringa_simile(stringa_output, MAPPATO_dataset["train"])
+stringa_simile = trova_stringa_simile(stringa_input, MAPPATO_dataset["train"])
 
 if stringa_simile is not None:
-    print(f"La stringa più simile a '{stringa_output}' è '{stringa_simile}'")
+    print(f"La stringa più simile a '{stringa_output}' è \n'{stringa_simile}'")
 else:
     print("Nessuna stringa simile trovata nella lista.")
 #endregion
