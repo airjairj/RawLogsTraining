@@ -82,7 +82,7 @@ MAPPATO_dataset = dataset.map(trova_servizi_unici)
 def trova_stringa_simile(input_string, d_set):
     min_distance = 1000  # Inizializziamo con un valore elevato
     stringa_simile = None
-    print("INPUT:", input_string)
+    print("GENERATO:", input_string)
     for candidata in d_set:
         distance = Levenshtein.distance(input_string, candidata["label"], score_cutoff=min_distance)
         if distance < min_distance:
