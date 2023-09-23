@@ -10,8 +10,9 @@ import Levenshtein
 
 
 notebook_login()
-
-dataset = load_dataset("json", data_files={"train": "/content/drive/MyDrive/Colab Notebooks/dataset-involved_services-raw_logs-10000-with_labels.json"})
+#
+##books = load_dataset("opus_books", "en-fr")
+dataset = load_dataset("json", data_files={"train": "SOSTITUIRE CON IL PATH DEL DATASET"})
 
 #region cambio lettere servizi
 mappa_sostituzione = {'webservice1': 'A', 'redisservice1': 'B', 'mobservice1': 'C', 'logservice1': 'D', 'dbservice1': 'E', 'redisservice2': 'F' , 'logservice2': 'G', 'mobservice2': 'H', 'dbservice2': 'I', 'webservice2': 'J'}
@@ -35,14 +36,14 @@ def trova_servizi_unici(a):
     return a
 #endregion
 
-
+#
 dataset = dataset["train"].train_test_split(test_size=0.1)
 #
 # PREPROCESS
 #
 checkpoint = "t5-small"
 tokenizer = AutoTokenizer.from_pretrained(checkpoint)
-
+#
 source_lang = "raw_logs"
 target_lang = "label"
 prefix = "translate raw_logs to label:"
@@ -53,12 +54,12 @@ def preprocess_function(examples):
     targets = [example for example in examples[target_lang]]
     model_inputs = tokenizer(inputs, text_target=targets, max_length=128, truncation=True)
     return model_inputs
-
+#
 tokenized_dataset = dataset.map(trova_servizi_unici)
 tokenized_dataset = tokenized_dataset.map(preprocess_function, batched=True)
 
 tokenized_dataset = tokenized_dataset.remove_columns("label")
-
+#
 print(mappa_sostituzione)
 
 
@@ -83,9 +84,9 @@ def compute_edit_distance(eval_preds):
 #TRAINING
 #
 model = AutoModelForSeq2SeqLM.from_pretrained(checkpoint)
-
+#
 training_args = Seq2SeqTrainingArguments(
-    output_dir="SOSTITUIRE CON PATH DI DESTINAZIONE PER IL MODELLO",
+    output_dir="SOSITUIRE CON IL PATH DOVE SI VUOLE SALVARE IL MODELLO",
     evaluation_strategy="epoch",
     learning_rate=2e-5,
     per_device_train_batch_size=18,
@@ -109,5 +110,6 @@ trainer = Seq2SeqTrainer(
 )
 input("Premi invio per addestrare")
 trainer.train()
-
+#
 trainer.push_to_hub()
+#
