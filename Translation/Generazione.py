@@ -88,7 +88,7 @@ def trova_stringa_simile(input_string, d_set):
         if distance < min_distance:
             min_distance = distance
             stringa_simile = candidata["raw_logs"]
-            print("CANDI:", candidata["label"])
+            print("CANDIDATO:", candidata["label"])
             print("MIN DIST:", min_distance)
     return stringa_simile
 
