@@ -80,17 +80,16 @@ MAPPATO_dataset = dataset.map(trova_servizi_unici)
 
 #region trova log con cui confrontare
 def trova_stringa_simile(input_string, d_set):
-    min_distance = float('inf')  # Inizializziamo con un valore elevato
+    min_distance = 1000  # Inizializziamo con un valore elevato
     stringa_simile = None
+    print("INPUT:", input_string)
     for candidata in d_set:
-        distance = Levenshtein.distance(input_string, candidata["label"])
+        distance = Levenshtein.distance(input_string, candidata["label"], score_cutoff=min_distance)
         if distance < min_distance:
             min_distance = distance
             stringa_simile = candidata["raw_logs"]
-
-    print("CANDI:", candidata["label"])
-    print("INPUT:", input_string)
-    print("MIN DIST:", min_distance)
+            print("CANDI:", candidata["label"])
+            print("MIN DIST:", min_distance)
     return stringa_simile
 
 # Esempio di utilizzo
