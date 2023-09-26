@@ -7,7 +7,7 @@ from transformers import AutoModelForSeq2SeqLM
 
 in_text = input("Scrivi il testo da tradurre oppure lascia vuoto per uno random:")
 #region RANDOM
-dataset = load_dataset("json", data_files={"train": "SOSTITUIRE CON IL PATH DEL DATASET"})
+dataset = load_dataset("json", data_files={"train": "PERCORSO DATASET"})
 
 def trova_labels_unici(dataset):
     labels = []
@@ -25,24 +25,27 @@ temp_list = trova_labels_unici(dataset)
 
 # Se ha lasciato vuoto prendi log random
 if(in_text == ""):
-    x = np.random.randint(0,len(temp_list))
+    x = np.random.randint(0,len(dataset["train"]))
     in_text = dataset["train"][x]["label"]
-    print("Ho preso random:",x,"\n", in_text)
-    print(dataset["train"][x]["raw_logs"])
+    print("Il sistema ha scelto random il log numero:",x,"\n", in_text)
+    vocab = {"LOG" : dataset["train"][x]["raw_logs"], "LABEL" : dataset["train"][x]["label"], "POSIZIONE": x}
+    print("\n",vocab["LOG"])
 #endregion
 
+#region generazione dell'output
 text = "translate raw_logs to label:"+in_text
 
-translator = pipeline("text2text-generation",model="SOSITUIRE CON IL PATH DOVE SI TROVA IL MODELLO")
+translator = pipeline("text2text-generation",model="PERCORSO MODELLO")
 translator(text)
 
-tokenizer = AutoTokenizer.from_pretrained("SOSITUIRE CON IL PATH DOVE SI TROVA IL MODELLO")
+tokenizer = AutoTokenizer.from_pretrained("PERCORSO MODELLO")
 inputs = tokenizer(text, return_tensors="pt").input_ids
 
-model = AutoModelForSeq2SeqLM.from_pretrained("SOSITUIRE CON IL PATH DOVE SI TROVA IL MODELLO")
+model = AutoModelForSeq2SeqLM.from_pretrained("PERCORSO MODELLO")
 outputs = model.generate(inputs, max_new_tokens=40, do_sample=True, top_k=30, top_p=0.95)
 
 tokenizer.decode(outputs[0], skip_special_tokens=True)
+#endregion
 
 #region traduci lettere a parole
 mappa_sostituzione_inversa = { 'A':'webservice1', 'B':'redisservice1', 'C':'mobservice1', 'D':'logservice1', 'E':'dbservice1', 'F':'redisservice2', 'G':'logservice2', 'H':'mobservice2',  'I':'dbservice2', 'J':'webservice2'}
@@ -82,21 +85,93 @@ MAPPATO_dataset = dataset.map(trova_servizi_unici)
 def trova_stringa_simile(input_string, d_set):
     min_distance = 1000  # Inizializziamo con un valore elevato
     stringa_simile = None
-    print("GENERATO:", input_string)
+    #print("GENERATO:", input_string)
     for candidata in d_set:
         distance = Levenshtein.distance(input_string, candidata["label"], score_cutoff=min_distance)
         if distance < min_distance:
             min_distance = distance
             stringa_simile = candidata["raw_logs"]
-            print("CANDIDATO:", candidata["label"])
-            print("MIN DIST:", min_distance)
+            #print("CANDIATO:", candidata["label"])
+            #print("MIN DIST:", min_distance)
     return stringa_simile
 
 # Esempio di utilizzo
 stringa_simile = trova_stringa_simile(stringa_input, MAPPATO_dataset["train"])
 
+print("\n")
+
 if stringa_simile is not None:
-    print(f"La stringa più simile a '{stringa_output}' è \n'{stringa_simile}'")
+    print(f"Il log più simile alla serie di servizi generati è:\n'{stringa_output}' è \n\n'{stringa_simile}'")
 else:
     print("Nessuna stringa simile trovata nella lista.")
+#endregion
+
+#region distanza label in/out NON UTILIZZATA
+'''
+def mapping_lettere(a):
+    risultato = ""
+    prossima_lettera = 'A'
+
+    elementi = a.split('--')
+
+    for elemento in elementi:
+        risultato += mappa_sostituzione[elemento] + '--'
+
+    # Rimuovi l'ultimo ' ' extra
+    risultato = risultato[:-2]
+
+    return risultato
+
+label_input = mapping_lettere(vocab["LABEL"])
+
+distanza_in_out = Levenshtein.distance(stringa_input, label_input)
+
+print("LABEL INPUT:", label_input, "\nLABEL GENERATO:", stringa_input,"\nDISTANZA:", distanza_in_out)
+'''
+#endregion
+
+#region estrai dati dal log
+## INPUT
+log_lines_IN = vocab["LOG"].split("\n")
+
+ultime_parti_IN = [line.split("|")[-1].strip() for line in log_lines_IN]
+
+log_unificato_IN = " ".join(ultime_parti_IN)
+
+## OUTPUT
+log_lines_OUT = stringa_simile.split("\n")
+
+ultime_parti_OUT = [line.split("|")[-1].strip() for line in log_lines_OUT]
+
+log_unificato_OUT = " ".join(ultime_parti_OUT)
+
+#endregion
+
+#region distanza log in/out
+
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+def calcola_similarita(testo_input, testo_output):
+    # Creazione di un vettore di conteggio per le parole nei due testi
+    vectorizer = CountVectorizer().fit_transform([testo_input, testo_output])
+
+    # Calcolo della similarità coseno tra i vettori dei due testi
+    cosine_sim = cosine_similarity(vectorizer)
+
+    # Il valore nella cella (0, 1) rappresenta la similarità tra input e output
+    similarita = cosine_sim[0][1]
+
+    return similarita
+
+# Esempio di utilizzo
+
+testo_input = log_unificato_IN
+testo_output = log_unificato_OUT
+
+similarita = calcola_similarita(testo_input, testo_output)
+similarita = similarita*100
+similarita = round(similarita, 2)
+print(f"\nSimilarità tra log di input e output: {similarita}%")
+
 #endregion

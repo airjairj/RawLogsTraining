@@ -12,7 +12,7 @@ import Levenshtein
 notebook_login()
 #
 ##books = load_dataset("opus_books", "en-fr")
-dataset = load_dataset("json", data_files={"train": "SOSTITUIRE CON IL PATH DEL DATASET"})
+dataset = load_dataset("json", data_files={"train": "PERCORSO DATASET"})
 
 #region cambio lettere servizi
 mappa_sostituzione = {'webservice1': 'A', 'redisservice1': 'B', 'mobservice1': 'C', 'logservice1': 'D', 'dbservice1': 'E', 'redisservice2': 'F' , 'logservice2': 'G', 'mobservice2': 'H', 'dbservice2': 'I', 'webservice2': 'J'}
@@ -86,7 +86,7 @@ def compute_edit_distance(eval_preds):
 model = AutoModelForSeq2SeqLM.from_pretrained(checkpoint)
 #
 training_args = Seq2SeqTrainingArguments(
-    output_dir="SOSITUIRE CON IL PATH DOVE SI VUOLE SALVARE IL MODELLO",
+    output_dir="PERCORSO MODELLO",
     evaluation_strategy="epoch",
     learning_rate=2e-5,
     per_device_train_batch_size=18,
