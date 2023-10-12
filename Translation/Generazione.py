@@ -4,11 +4,12 @@
 from transformers import pipeline
 from transformers import AutoTokenizer
 from transformers import AutoModelForSeq2SeqLM
+from datasets import load_dataset
+import matplotlib.pyplot as plt
 
 in_text = input("Scrivi il testo da tradurre oppure lascia vuoto per uno random:")
 #region RANDOM
-dataset = load_dataset("json", data_files={"train": "PERCORSO DATASET"})
-
+dataset = load_dataset("json", data_files={"train": "/content/drive/MyDrive/Colab Notebooks/dataset-involved_services-raw_logs-10000-with_labels.json"})
 def trova_labels_unici(dataset):
     labels = []
     for val in dataset:
@@ -33,15 +34,15 @@ if(in_text == ""):
 #endregion
 
 #region generazione dell'output
-text = "translate raw_logs to label:"+in_text
+text = "translate raw_logs to label:"+vocab["LOG"]
 
-translator = pipeline("text2text-generation",model="PERCORSO MODELLO")
+translator = pipeline("text2text-generation",model="PERCORSO DATASET")
 translator(text)
 
-tokenizer = AutoTokenizer.from_pretrained("PERCORSO MODELLO")
+tokenizer = AutoTokenizer.from_pretrained("PERCORSO DATASET")
 inputs = tokenizer(text, return_tensors="pt").input_ids
 
-model = AutoModelForSeq2SeqLM.from_pretrained("PERCORSO MODELLO")
+model = AutoModelForSeq2SeqLM.from_pretrained("PERCORSO DATASET")
 outputs = model.generate(inputs, max_new_tokens=40, do_sample=True, top_k=30, top_p=0.95)
 
 tokenizer.decode(outputs[0], skip_special_tokens=True)
@@ -101,33 +102,9 @@ stringa_simile = trova_stringa_simile(stringa_input, MAPPATO_dataset["train"])
 print("\n")
 
 if stringa_simile is not None:
-    print(f"Il log più simile alla serie di servizi generati è:\n'{stringa_output}' è \n\n'{stringa_simile}'")
+    print(f"Il log più simile alla serie di servizi generati:\n'{stringa_output}' è \n\n'{stringa_simile}'")
 else:
     print("Nessuna stringa simile trovata nella lista.")
-#endregion
-
-#region distanza label in/out NON UTILIZZATA
-'''
-def mapping_lettere(a):
-    risultato = ""
-    prossima_lettera = 'A'
-
-    elementi = a.split('--')
-
-    for elemento in elementi:
-        risultato += mappa_sostituzione[elemento] + '--'
-
-    # Rimuovi l'ultimo ' ' extra
-    risultato = risultato[:-2]
-
-    return risultato
-
-label_input = mapping_lettere(vocab["LABEL"])
-
-distanza_in_out = Levenshtein.distance(stringa_input, label_input)
-
-print("LABEL INPUT:", label_input, "\nLABEL GENERATO:", stringa_input,"\nDISTANZA:", distanza_in_out)
-'''
 #endregion
 
 #region estrai dati dal log
